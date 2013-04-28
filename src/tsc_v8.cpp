@@ -82,7 +82,7 @@ Handle<String> choose_best_player(	const Handle<Array> players,
             name_of_best = name;
         }
     }
-	chosen_players->Set(name, player); // player value is redundant
+	chosen_players->Set(name_of_best, player); // player value is redundant
 
 	return scope.Close(name_of_best);
 }
@@ -167,7 +167,7 @@ Handle<Value> create(const Arguments &args)
     // set the best GK for N.1 position
     //
     t_player = t_players->Get(1)->ToObject();
-    t_players->Set(keyName, choose_best_player(players, chosen_players, st_getter));
+    t_player->Set(keyName, choose_best_player(players, chosen_players, st_getter));
 
     // From now on, i is the index for players in the teamsheet
 	//
@@ -202,7 +202,7 @@ Handle<Value> create(const Arguments &args)
     Handle<String> name_of_best = choose_best_player(players, chosen_players, st_getter);
     t_player->Set(keyName, name_of_best);
     t_player->Set(keyPos, String::NewSymbol("GK"));
-    t_players->Set(Integer::New(12), t_player);
+    t_players->Set(12, t_player);
     chosen_players->Set(name_of_best, t_player);
 
     for (i = 13; i <= num_subs + 11; ++i)
@@ -218,11 +218,11 @@ Handle<Value> create(const Arguments &args)
         else // if (!strcmp(pos, "FWC"))
 			name_of_best = choose_best_player(players, chosen_players, sh_getter);
 
-        t_player->Set(keyName, name_of_best);
         t_player->Set(keyPos, String::NewSymbol(pos));
+        t_player->Set(keyName, name_of_best);
         chosen_players->Set(name_of_best, t_player);
         sub_pos_iter = (sub_pos_iter + 1) % 5;
-        t_players->Set(Integer::New(i), t_player);
+        t_players->Set(i, t_player);
     }
 
     Handle<Object> teamsheet = Object::New();
@@ -233,16 +233,12 @@ Handle<Value> create(const Arguments &args)
     teamsheet->Set(String::New("teamName"),  teamname);
     teamsheet->Set(String::New("tactic"),  String::New(tactic));
 
-    // Print all the players and their position
-    for (i = 1; i <= 11 + num_subs; i++)
-    {
-        t_player = t_players->Get(i)->ToObject();
-        teamsheet->Set(t_player->Get(keyPos), t_player->Get(keyName));
-    }
-
     // Print the penalty kick taker (player number last_mf + 1)
     t_player = t_players->Get(last_mf + 1)->ToObject();
     teamsheet->Set(String::New("PK"), t_player->Get(keyName));
+
+    // Print all the players and their position
+    teamsheet->Set(String::New("Selection"), t_players);
 
     return scope.Close(teamsheet);
 }
