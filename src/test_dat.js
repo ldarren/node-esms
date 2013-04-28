@@ -1,4 +1,4 @@
-var
+Object.freeze(
 leagueDat = {
     home_bonus: 200,
     dp_for_yellow: 4,
@@ -9,7 +9,8 @@ leagueDat = {
     substitutions: 3,
     updtr_fitness_gain: 20,
     updtr_fitness_after_injury: 80
-},
+});
+Object.freeze(
 leagueAbilities = {
     AB_Goal: 50,
     AB_Assist: 35,
@@ -24,7 +25,8 @@ leagueAbilities = {
     AB_Concede: -8,
     AB_Yellow: -8,
     AB_Red: -20
-},
+});
+Object.freeze(
 leagueAbbreviations = {
     ape: "Apes_United",
     klm: "KLM_Royal_Club",
@@ -33,7 +35,8 @@ leagueAbbreviations = {
     bla: "Blade_Runners",
     esu: "ESMS_United",
     cra: "Crazy_Insomniacs"
-},
+});
+Object.freeze(
 testRoster = [ 
   { name: 'U_Avrovroo',
     nationality: 'arg',
@@ -559,4 +562,4 @@ testRoster = [
     dp: 0,
     injury: 0,
     suspension: 0,
-    fitness: 100 } ];
+    fitness: 100 } ]);

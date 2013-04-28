@@ -7,6 +7,10 @@
         {
             "target_name": "fixtures",
             "sources": [ "fixtures_v8.cpp" ]
+        },
+        {
+            "target_name": "tsc",
+            "sources": [ "tsc_v8.cpp", "object_v8.cpp", "util.cpp" ]
         }
     ]
 }

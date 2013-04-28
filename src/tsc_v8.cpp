@@ -5,13 +5,9 @@
 // 
 #include <node.h>
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <set>
-#include <cctype>
-#include <ctime>
-#include <cassert>
+#include <string>
 
 #include "tsc_v8.h"
 #include "object_v8.h"
@@ -28,25 +24,25 @@ bool waitflag = true;
 
 inline int st_getter(Handle<Object> player)
 {
-	return player->Get(StringSymbol::New("st"))->IntegerValue()  * player->Get(StringSymbol("fitness"))->IntegerValue() / 100;
+	return player->Get(String::NewSymbol("st"))->IntegerValue()  * player->Get(String::NewSymbol("fitness"))->IntegerValue() / 100;
 }
 
 
 inline int tk_getter(Handle<Object> player)
 {
-	return player->Get(StringSymbol::New("tk"))->IntegerValue()  * player->Get(StringSymbol("fitness"))->IntegerValue() / 100;
+	return player->Get(String::NewSymbol("tk"))->IntegerValue()  * player->Get(String::NewSymbol("fitness"))->IntegerValue() / 100;
 }
 
 
 inline int ps_getter(Handle<Object> player)
 {
-	return player->Get(StringSymbol::New("ps"))->IntegerValue()  * player->Get(StringSymbol("fitness"))->IntegerValue() / 100;
+	return player->Get(String::NewSymbol("ps"))->IntegerValue()  * player->Get(String::NewSymbol("fitness"))->IntegerValue() / 100;
 }
 
 
 inline int sh_getter(Handle<Object> player)
 {
-	return player->Get(StringSymbol::New("sh"))->IntegerValue()  * player->Get(StringSymbol("fitness"))->IntegerValue() / 100;
+	return player->Get(String::NewSymbol("sh"))->IntegerValue()  * player->Get(String::NewSymbol("fitness"))->IntegerValue() / 100;
 }
 
 
@@ -68,14 +64,14 @@ Handle<String> choose_best_player(	const Handle<Array> players,
     Handle<Object> player;
 	int best_skill = -1, ret;
 	Handle<String> name_of_best, name;
-    Handle<StringSymbol> keyName = StringSymbol::New("name");
-    Handle<StringSymbol> keyInjury = StringSymbol::New("injury");
-    Handle<StringSymbol> keysuspension = StringSymbol::New("suspension");
+    Handle<String> keyName = String::NewSymbol("name");
+    Handle<String> keyInjury = String::NewSymbol("injury");
+    Handle<String> keySuspension = String::NewSymbol("suspension");
 
     for (int i=0, l=players->Length(); i<l; ++i){
-        player = players->Get(i);
+        player = players->Get(i)->ToObject();
 
-        name = player->Get(keyName);
+        name = player->Get(keyName)->ToString();
 
         if (chosen_players->Has(name)) continue;
 
@@ -96,16 +92,14 @@ Handle<Value> create(const Arguments &args)
 {
     HandleScope scope;
 
-    if (6 !== args.Length()) return Undefined();
+    if (4 != args.Length()) return Undefined();
 
     Handle<String> teamname = Handle<String>::Cast(args[0]);
     Handle<String> formation = Handle<String>::Cast(args[1]);
-    ObjectV8 players(Handle<Object>::Cast(args[2]));
+    Handle<Array> players(Handle<Array>::Cast(args[2]));
     ObjectV8 leagueDat(Handle<Object>::Cast(args[3]));
-    ObjectV8 leagueAbilities(Handle<Object>::Cast(args[4]));
-    ObjectV8 leagueAbbreviations(Handle<Object>::Cast(args[5]));
 
-    int num_subs = legueDat.get("num_subs", 7);
+    int num_subs = leagueDat.get("num_subs", 7);
 
     // The number of subs is not constant, therefore there is
     // a need for some smart assignment. The following array
@@ -122,14 +116,14 @@ Handle<Value> create(const Arguments &args)
     //
     int sub_pos_iter = 0;
 
-    if (players->Length() < 11 + num_subs)
+    if (players->Length() < (unsigned)(11 + num_subs))
 		return Undefined(); // Error: not enough players in roster
 
     int dfs, mfs, fws;
     char tactic[2];
 
     String::AsciiValue fmt(formation);
-    parse_formation(*fmt, dfs, mfs, fws, tactic);
+    if (!parse_formation(*fmt, dfs, mfs, fws, tactic)) return Undefined();
 
     // Calculate indices of the last defender and the last midfielder
     //
@@ -145,125 +139,112 @@ Handle<Value> create(const Arguments &args)
 	
 	// This will keep us from picking the same players more than once
 	//
+    Handle<String> keyPos = String::NewSymbol("pos");
+    Handle<String> keyName = String::NewSymbol("name");
+
     Handle<Array> t_players = Array::New();
     Handle<Object> t_player;
+    int i;
 	
     for (i = 1; i <= 11; i++)
     {
         t_player = Object::New();
         if (i == 1)
-            t_player->Set(StringSymbol::New("pos"), StringSymbol::New("GK"));
+            t_player->Set(keyPos, String::NewSymbol("GK"));
         else if (i >= 2 && i <= last_df)
-            t_player->Set(StringSymbol::New("pos"), StringSymbol::New("DFC"));
+            t_player->Set(keyPos, String::NewSymbol("DFC"));
         else if (i > last_df && i <= last_mf)
-            t_player->Set(StringSymbol::New("pos"), StringSymbol::New("MFC"));
+            t_player->Set(keyPos, String::NewSymbol("MFC"));
         else if (i > last_mf && i <= 11)
-            t_player->Set(StringSymbol::New("pos"), StringSymbol::New("FWC"));
+            t_player->Set(keyPos, String::NewSymbol("FWC"));
 
         t_players->Set(i, t_player);
     }
 
-	set< Handle<String> > chosen_players;
+	Handle<Object> chosen_players = Object::New();
 	
+
     // set the best GK for N.1 position
     //
-	t_player[1].name = choose_best_player(players, chosen_players, st_getter);
-	chosen_players.insert(t_player[1].name);
+    t_player = t_players->Get(1)->ToObject();
+    t_players->Set(keyName, choose_best_player(players, chosen_players, st_getter));
 
-    // From now on, j is the index for players in the teamsheet
+    // From now on, i is the index for players in the teamsheet
 	//
 
     // Set the starting defenders
 	//
-    for (j = 2; j <= last_df; j++)
+    for (i = 2; i <= last_df; i++)
     {
-		t_player[j].name = choose_best_player(players, chosen_players, tk_getter);
-		chosen_players.insert(t_player[j].name);
+        t_player = t_players->Get(i)->ToObject();
+        t_player->Set(keyName, choose_best_player(players, chosen_players, tk_getter));
     }
 
     // Set the starting midfielders
 	//
-    for (j = last_df + 1; j <= last_mf; j++)
+    for (i = last_df + 1; i <= last_mf; i++)
     {
-		t_player[j].name = choose_best_player(players, chosen_players, ps_getter);
-		chosen_players.insert(t_player[j].name);
+        t_player = t_players->Get(i)->ToObject();
+        t_player->Set(keyName, choose_best_player(players, chosen_players, ps_getter));
     }
 
     // Set the starting forwards
 	//
-    for (j = last_mf + 1; j <= 11; j++)
+    for (i = last_mf + 1; i <= 11; i++)
     {
-		t_player[j].name = choose_best_player(players, chosen_players, sh_getter);
-		chosen_players.insert(t_player[j].name);
+        t_player = t_players->Get(i)->ToObject();
+        t_player->Set(keyName, choose_best_player(players, chosen_players, sh_getter));
     }
 
     // Set the substitute GK
 	//
-	t_player[12].name = choose_best_player(players, chosen_players, st_getter);
-	t_player[12].pos = "GK";
-	chosen_players.insert(t_player[12].name);
-	
-	string name_of_best = "";
+    t_player = Object::New();
+    Handle<String> name_of_best = choose_best_player(players, chosen_players, st_getter);
+    t_player->Set(keyName, name_of_best);
+    t_player->Set(keyPos, String::NewSymbol("GK"));
+    t_players->Set(Integer::New(12), t_player);
+    chosen_players->Set(name_of_best, t_player);
 
-    for (j = 13; j <= num_subs + 11; ++j)
+    for (i = 13; i <= num_subs + 11; ++i)
     {
+        t_player = Object::New();
+        const char *pos = sub_position[sub_pos_iter];
         // What position should the current sub be on ?
         //
-        if (!strcmp(sub_position[sub_pos_iter], "DFC"))
+        if (!strcmp(pos, "DFC"))
 			name_of_best = choose_best_player(players, chosen_players, tk_getter);
-        else if (!strcmp(sub_position[sub_pos_iter], "MFC"))
+        else if (!strcmp(pos, "MFC"))
 			name_of_best = choose_best_player(players, chosen_players, ps_getter);
-        else if (!strcmp(sub_position[sub_pos_iter], "FWC"))
+        else // if (!strcmp(pos, "FWC"))
 			name_of_best = choose_best_player(players, chosen_players, sh_getter);
-        else
-            assert(0);
 
-		t_player[j].name = name_of_best;
-		t_player[j].pos = sub_position[sub_pos_iter];
-		chosen_players.insert(t_player[j].name);
+        t_player->Set(keyName, name_of_best);
+        t_player->Set(keyPos, String::NewSymbol(pos));
+        chosen_players->Set(name_of_best, t_player);
         sub_pos_iter = (sub_pos_iter + 1) % 5;
+        t_players->Set(Integer::New(i), t_player);
     }
 
-    sprintf(teamsheetname, "%ssht.txt", teamname);
-
-    teamsheetfile = fopen(teamsheetname, "w");
+    Handle<Object> teamsheet = Object::New();
 
     // Start filling the team sheet with the roster name and the
     // tactic
     //
-    fprintf(teamsheetfile, "%s\n", teamname);
-    fprintf(teamsheetfile, "%s\n", tactic);
+    teamsheet->Set(String::New("teamName"),  teamname);
+    teamsheet->Set(String::New("tactic"),  String::New(tactic));
 
-    /* Print all the players and their position */
+    // Print all the players and their position
     for (i = 1; i <= 11 + num_subs; i++)
     {
-        fprintf(teamsheetfile, "\n%s %s", t_player[i].pos.c_str(), t_player[i].name.c_str());
-
-        if (i == 11)
-            fprintf(teamsheetfile, "\n");
+        t_player = t_players->Get(i)->ToObject();
+        teamsheet->Set(t_player->Get(keyPos), t_player->Get(keyName));
     }
 
-    /* Print the penalty kick taker (player number last_mf + 1) */
-    fprintf(teamsheetfile, "\n\nPK: %s\n\n", t_player[last_mf + 1].name.c_str());
+    // Print the penalty kick taker (player number last_mf + 1)
+    t_player = t_players->Get(last_mf + 1)->ToObject();
+    teamsheet->Set(String::New("PK"), t_player->Get(keyName));
 
-    printf("%s created successfully\n", teamsheetname);
-
-    fclose(teamsheetfile);
-
-    MY_EXIT(0);
-
-    return 0;
-}
-
-
-// Remove trailing newline
-//
-void chomp(char* str)
-{
-    int len = strlen(str);
-
-    if (str[len-1] == '\n')
-        str[len-1] = '\0';
+    return scope.Close(teamsheet);
 }
 
 
@@ -273,14 +254,12 @@ void chomp(char* str)
 //
 // For example: 442N means 4 DFs, 4 MFs, 2 FWs, playing N
 //
-void parse_formation(char* formation, int& dfs, int& mfs,
+bool parse_formation(char* formation, int& dfs, int& mfs,
                      int& fws, char* tactic)
 {
     if (strlen(formation) != 4)
     {
-        printf("The formation string must be exactly 4 characters long\n");
-        printf("For example: 442N\n");
-        MY_EXIT(0);
+        return false; // The formation string must be exactly 4 characters long, For example: 442N
     }
 
     // Random formation ?
@@ -307,7 +286,7 @@ void parse_formation(char* formation, int& dfs, int& mfs,
         tactic[0] = formation[3];
         tactic[1] = '\0';
 
-        return;
+        return true;
     }
 
     dfs = formation[0] - '0';
@@ -317,31 +296,29 @@ void parse_formation(char* formation, int& dfs, int& mfs,
     tactic[0] = formation[3];
     tactic[1] = '\0';
 
-    verify_position_range(dfs);
-    verify_position_range(mfs);
-    verify_position_range(fws);
+    if (!verify_position_range(dfs)) return false;
+    if (!verify_position_range(mfs)) return false;
+    if (!verify_position_range(fws)) return false;
 
     if (dfs + mfs + fws != 10)
     {
-        printf("The number of players on all positions added together must be 10\n");
-        printf("For example: 442N\n");
-        MY_EXIT(0);
+        return false; // The number of players on all positions added together must be 10, For example: 442N
     }
+    return true;
 }
 
 
-void verify_position_range(int n)
+bool verify_position_range(int n)
 {
     if (n < 1 || n > 8)
     {
-        printf("The number of players on each position must be between 1 and 8\n");
-        printf("For example: 442N\n");
-        MY_EXIT(0);
+        return false; // The number of players on each position must be between 1 and 8, For example: 442N
     }
+    return true;
 }
 
 void initialize(Handle<Object> exports, Handle<Object> module){
     module->Set(String::NewSymbol("exports"), FunctionTemplate::New(create)->GetFunction());
 }
 
-NODE_MODULE(roster_creator, initialize)
+NODE_MODULE(tsc, initialize)
