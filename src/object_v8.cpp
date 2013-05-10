@@ -12,6 +12,7 @@ ObjectV8::ObjectV8(Handle<Object> obj){
 }
 ObjectV8::~ObjectV8(){
     _obj.Dispose();
+    _obj.Clear();
 }
 
 bool ObjectV8::get(const char *param, bool def) const{

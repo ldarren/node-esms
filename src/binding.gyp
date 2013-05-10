@@ -11,6 +11,10 @@
         {
             "target_name": "tsc",
             "sources": [ "tsc_v8.cpp", "object_v8.cpp", "util.cpp" ]
+        },
+        {
+            "target_name": "esms",
+            "sources": [ "esms_v8.cpp", "object_v8.cpp", "util.cpp" ]
         }
     ]
 }
