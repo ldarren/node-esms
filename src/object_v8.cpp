@@ -4,6 +4,11 @@
 
 using namespace v8;
 
+const char* toAscii(Handle<String> jsStr, char *buffer){
+    String::AsciiValue str(jsStr);
+    return strcpy(*str, buffer);
+}
+
 ObjectV8::ObjectV8(){
     _obj = Persistent<Object>::New(Object::New());
 }

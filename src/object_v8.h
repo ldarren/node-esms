@@ -26,4 +26,6 @@ private:
     v8::Persistent<v8::Object> _obj;
 };
 
+const char* toAscii(v8::Handle<v8::String> jsStr, char *buffer);
+
 #endif // _OBJECT_V8_H_
