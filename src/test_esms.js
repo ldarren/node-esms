@@ -12,12 +12,14 @@ schedule = fixtures(['team1', 'team2', 'team3']);
 
 console.log(schedule);
 */
+/*
 var
 tsc = require('./build/Release/tsc'),
 sheet = tsc('Apes United', "442N", testRoster, leagueDat);
 
 console.log(sheet);
-/*
+*/
+
 var
 esms = require('./build/Release/esms'),
 option = {
@@ -27,7 +29,7 @@ option = {
     penalty_shootout: false,
     team_stats_total: 0
 },
-report = esms(option, leagueDat, leagueAbilityDat, languageDat, home_teamsheet, away_teamsheet, home_roster, away_roster);
+report = esms(option, leagueDat, leagueAbilities, languageDat, tacticsDat, teamsheet, teamsheet, testRoster, testRoster);
 
 console.log(report);
-*/
+
