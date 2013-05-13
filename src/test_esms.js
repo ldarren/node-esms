@@ -33,3 +33,29 @@ report = esms(option, leagueDat, leagueAbilities, languageDat, tacticsDat, teams
 
 console.log(report);
 
+var
+updtr = require('./build/Release/updtr'),
+/*
+		"Weekly updates:\n\n"
+        "1)  Update rosters (100% fitness recovery)\n"
+		"2)  Update rosters (50% fitness recovery)\n"
+        "3)  Decrease injuries\n"
+        "4)  Decrease suspensions\n"
+        "5)  Update league table\n"
+        "6)  Decrease suspensions + update rosters (50% of fitness gain)\n"
+        "7)  Decrease suspensions, injuries + update rosters (50% fitness recovery), league table\n"
+        "8)  Decrease suspensions, injuries + update rosters (100% fitness recovery), league table\n\n"
+		"End-of-season updates:\n\n"
+		"9)  Increase all players' age by one\n"
+		"10) Reset all player stats\n"
+		"11) Reset all player stats, including injuries\n"
+		"12) Reset all player stats, including injuries and suspensions\n\n"
+        "Enter your choice -> ";
+ */
+option = {
+    choice: 8
+},
+result = updtr(option, leagueDat, leagueAbilities, languageDat, testRoster, testRoster);
+
+console.log(result);
+

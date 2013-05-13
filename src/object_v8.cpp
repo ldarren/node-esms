@@ -1,13 +1,13 @@
 #include <v8.h>
+#include <string.h>
 #include <string>
-#include <cstring>
 #include "./object_v8.h"
 
 using namespace v8;
 
 const char* toAscii(Handle<String> jsStr, char *buffer){
     String::AsciiValue str(jsStr);
-    return std::strcpy(*str, buffer);
+    return strcpy(buffer, *str);
 }
 
 ObjectV8::ObjectV8(){
