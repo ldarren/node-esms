@@ -31,7 +31,7 @@ option = {
 },
 report = esms(option, leagueDat, leagueAbilities, languageDat, tacticsDat, teamsheet, teamsheet, testRoster, testRoster);
 
-console.log(report);
+console.log('%j',report);
 /*
 var
 updtr = require('./build/Release/updtr'),
