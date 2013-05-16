@@ -178,6 +178,7 @@ Handle<String> init_teams_data(Handle<Object> home_teamsheet, Handle<Object> awa
     Handle<Object> namepos;
     Handle<String> pkname;
     Handle<String> playername;
+    const Handle<String> KEY_TEAM_NAME = String::NewSymbol("teamName");
     const Handle<String> KEY_TACTIC = String::NewSymbol("tactic");
     const Handle<String> KEY_PK = String::NewSymbol("PK");
     const Handle<String> KEY_SELECTION = String::NewSymbol("Selection");
@@ -206,6 +207,8 @@ Handle<String> init_teams_data(Handle<Object> home_teamsheet, Handle<Object> awa
             roster = away_roster;
         }
 
+        toAscii(teamsheet->Get(KEY_TEAM_NAME)->ToString(), team[l].name);
+        toAscii(teamsheet->Get(KEY_TEAM_NAME)->ToString(), team[l].fullname);
         toAscii(teamsheet->Get(KEY_TACTIC)->ToString(), team[l].tactic);
 
         if (!tact_manager().tactic_exists(string(team[l].tactic)))
@@ -409,70 +412,75 @@ void ensure_no_duplicate_names(void)
 /// Prints the starting tactics & formation
 /// of each team to the commentary file.
 ///
-void print_starting_tactics(Handle<Array> commentary)
+void print_starting_tactics(Handle<Object> output)
 {
+    HandleScope scope;
+
     int i, j;
+    teams *t;
+    playerstruct *ps;
+
+    Handle<Array> teams = Array::New();
+    Handle<Object> teamInfo;
+    Handle<Object> selection;
+    Handle<Array> gkList;
+    Handle<Array> dfList;
+    Handle<Array> mfList;
+    Handle<Array> fwList;
+    Handle<String> keyName = String::NewSymbol("name");
+    Handle<String> keySelection = String::NewSymbol("selection");
+    Handle<String> keyTactic = String::NewSymbol("tactic");
+    Handle<String> keyGk = String::NewSymbol("gk");
+    Handle<String> keyDf = String::NewSymbol("df");
+    Handle<String> keyMf = String::NewSymbol("mf");
+    Handle<String> keyFw = String::NewSymbol("fw");
 
     /* Initialize formation counters */
-
-    sprintf(buf, "Home                           Away\n");
-    commentary->Set(commentary->Length(), String::New(buf));
-    sprintf(buf, "----                           ----\n\n");
-    commentary->Set(commentary->Length(), String::New(buf));
-    sprintf(buf, "%-30s %-30s\n\n", team[0].fullname, team[1].fullname);
-    commentary->Set(commentary->Length(), String::New(buf));
-
-    for (i = 1; i <= 11; i++)
-    {
-        sprintf(buf, "%-3s %-26s %-3s %-26s\n",
-                pos_and_side2fullpos(team[0].player[i].pos, team[0].player[i].side).c_str(),
-                team[0].player[i].name,
-                pos_and_side2fullpos(team[1].player[i].pos, team[1].player[i].side).c_str(),
-                team[1].player[i].name);
-        commentary->Set(commentary->Length(), String::New(buf));
-
-    }
 
     // For each team, count the amount of players on each
     // position
     //
     for (j = 0; j <= 1; j++)
     {
-        int numDF = 0, numDM = 0, numMF = 0, numAM = 0, numFW = 0;
+        teamInfo = Object::New();
+        selection = Object::New();
+        gkList = Array::New();
+        dfList = Array::New();
+        mfList = Array::New();
+        fwList = Array::New();
+
+        t = &(team[j]);
+        teamInfo->Set(keyName, String::New(t->fullname));
 
         for (i = 1; i <= 11; i++)
         {
-            if (!strcmp(team[j].player[i].pos, "DF"))
-                numDF++;
-            if (!strcmp(team[j].player[i].pos, "DM"))
-                numDM++;
-            if (!strcmp(team[j].player[i].pos, "MF"))
-                numMF++;
-            if (!strcmp(team[j].player[i].pos, "AM"))
-                numAM++;
-            if (!strcmp(team[j].player[i].pos, "FW"))
-                numFW++;
+            ps = &(t->player[i]);
+
+            if (!strcmp(ps->pos, "GK")){
+                gkList->Set(gkList->Length(), String::New(ps->name));
+            }else if (!strcmp(ps->pos, "DF")){
+                dfList->Set(dfList->Length(), String::New(ps->name));
+            }else if (!strcmp(ps->pos, "DM")){
+                mfList->Set(mfList->Length(), String::New(ps->name));
+            }else if (!strcmp(ps->pos, "MF")){
+                mfList->Set(mfList->Length(), String::New(ps->name));
+            }else if (!strcmp(ps->pos, "AM")){
+                mfList->Set(mfList->Length(), String::New(ps->name));
+            }else if (!strcmp(ps->pos, "FW")){
+                fwList->Set(fwList->Length(), String::New(ps->name));
+            }
         }
+        selection->Set(keyGk, gkList);
+        selection->Set(keyDf, dfList);
+        selection->Set(keyMf, mfList);
+        selection->Set(keyFw, fwList);
+        teamInfo->Set(keySelection, selection);
 
-        ostringstream os;
+        teamInfo->Set(keyTactic, String::New(tact_manager().get_tactic_full_name(t->tactic).c_str()));
 
-        os << numDF << "-";
-
-        if (numDM > 0)
-            os << numDM << "-";
-
-        os << numMF << "-";
-
-        if (numAM > 0)
-            os << numAM << "-";
-
-        os << numFW;
-
-        string infa = os.str() + " " + tact_manager().get_tactic_full_name(team[j].tactic);
-
-        sprintf(buf, "%-30s ", infa.c_str());
-        commentary->Set(commentary->Length(), String::New(buf));
+        teams->Set(j, teamInfo);
     }
+    output->Set(String::New("teamInfo"), teams);
 }
 
 
@@ -1445,22 +1453,14 @@ Handle<Object> print_final_stats(Handle<Object> output)
 {
     HandleScope scope;
 
-    Handle<Array> shotsOffTarget = Array::New();
-    Handle<Array> shotsOnTarget = Array::New();
-    Handle<Array> scores = Array::New();
+    Handle<Array> teamInfos = Handle<Array>::Cast(output->Get(String::NewSymbol("teamInfo")));
+    Handle<Object> teamInfo;
     Handle<Array> teamStatistics = Array::New();
     Handle<Array> teamTotals = Array::New();
     Handle<Array> teamProfiles = Array::New();
-
-    // Print shots on/off target and final score
-    shotsOffTarget->Set(0, Integer::New(team[0].finalshots_off));
-    shotsOffTarget->Set(1, Integer::New(team[1].finalshots_off));
-
-    shotsOnTarget->Set(0, Integer::New(team[0].finalshots_on));
-    shotsOnTarget->Set(1, Integer::New(team[1].finalshots_on));
-
-    scores->Set(0, Integer::New(team[0].score));
-    scores->Set(1, Integer::New(team[1].score));
+    Handle<String> keyShotsOffTarget = String::NewSymbol("shotsOffTarget");
+    Handle<String> keyShotsOnTarget = String::NewSymbol("shotsOnTarget");
+    Handle<String> keyScore = String::NewSymbol("score");
 
     // Print final stats for players
     // Name          Pos Prs St Tk Ps Sh Sm Min Sav Ktk Kps Ass Sht Gls Yel Red Inj KAb TAb PAb SAb Fit
@@ -1474,11 +1474,18 @@ Handle<Object> print_final_stats(Handle<Object> output)
 
     for (j = 0; j <= 1; j++)
     {
+        teamInfo = Handle<Object>::Cast(teamInfos->Get(j));
+
         // Totals
         t_saves = t_tackles = t_keypasses = t_assists = t_shots = t_goals = t_yellowcards = t_redcards = t_injured = 0;
         
         teamObj = Object::New();
         t = &team[j];
+
+        // Print shots on/off target and final score
+        teamInfo->Set(keyShotsOffTarget, Integer::New(t->finalshots_off));
+        teamInfo->Set(keyShotsOnTarget, Integer::New(t->finalshots_on));
+        teamInfo->Set(keyScore, Integer::New(t->score));
 
         // Print stats for each player and collect totals
         for (i = 1; i <= num_players; i++)
@@ -1555,9 +1562,6 @@ Handle<Object> print_final_stats(Handle<Object> output)
         }
     }
 
-    output->Set(String::New("shotsOffTarget"), shotsOffTarget);
-    output->Set(String::New("shotsOnTarget"), shotsOnTarget);
-    output->Set(String::New("scores"), scores);
     output->Set(String::New("teamStatistics"), teamStatistics);
     output->Set(String::New("teamTotals"), teamTotals);
     output->Set(String::New("teamProfiles"), teamProfiles);
@@ -1769,7 +1773,7 @@ Handle<Value> create(const Arguments &args)
     Handle<Object> output = Object::New();
     Handle<Array> commentary = Array::New();
 
-    print_starting_tactics(commentary);
+    print_starting_tactics(output);
 
     commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_KICKOFF").c_str()));
 

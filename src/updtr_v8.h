@@ -66,16 +66,16 @@ struct player_stat
 };
 
 
-void transform_all_players(void (*transformer_proc)(RosterPlayerIterator&, string, void*));
-void increase_ages();
-void reset_stats(unsigned inj_sus_flag = 0);
-void recover_fitness(bool half);
-void decrease_suspensions_injuries(unsigned inj_sus_flag = 0);
+void transform_all_players(void (*transformer_proc)(v8::Handle<v8::Object>, string, void*), v8::Handle<v8::Array>, void*, int);
+void increase_ages(v8::Handle<v8::Array>, v8::Handle<v8::Array>);
+void reset_stats(v8::Handle<v8::Array>, v8::Handle<v8::Array>, unsigned inj_sus_flag = 0);
+void recover_fitness(v8::Handle<v8::Array>, v8::Handle<v8::Array>, bool, int);
+void decrease_suspensions_injuries(v8::Handle<v8::Array>, v8::Handle<v8::Array>, int, unsigned inj_sus_flag = 0);
 void generate_leaders();
-void update_rosters();
-void update_league_table();
+void update_rosters(const ObjectV8 &, v8::Handle<v8::Array>, v8::Handle<v8::Array>, v8::Handle<v8::Array>, v8::Handle<v8::Object>);
+void update_league_table(v8::Handle<v8::Array>, v8::Handle<v8::Array>, v8::Handle<v8::Object>);
 int my_random(int n);
-void get_players_game_stats(string stats_filename, vector<player_game_stats>& home_team,
+void get_players_game_stats(const ObjectV8&, string stats_filename, vector<player_game_stats>& home_team,
                             vector<player_game_stats>& away_team);
 
 const unsigned SUSPENSIONS = 1;

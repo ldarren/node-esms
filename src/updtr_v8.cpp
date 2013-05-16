@@ -12,12 +12,10 @@
 #include <algorithm>
 
 #include "util.h"
-#include "updtr_v8.h"
-#include "comment_v8.h"
 #include "object_v8.h"
-
-#include "rosterplayer.h"
-#include "league_table.h"
+#include "league_table_v8.h"
+#include "comment_v8.h"
+#include "updtr_v8.h"
 
 using namespace v8;
 using namespace std;
@@ -31,12 +29,12 @@ bool waitflag = true;
 // These reports are filled in by the various updating functions,
 // and printed to one file in the end
 //
-vector<string> skill_change_report;
-vector<string> injury_report;
-vector<string> suspension_report;
-vector<string> stats_report;
+//vector<string> skill_change_report;
+//vector<string> injury_report;
+//vector<string> suspension_report;
+//vector<string> stats_report;
 vector<string> leaders_report;
-vector<string> table_report;
+//vector<string> table_report;
 
 
 Handle<Value> create(const Arguments &args)
@@ -54,9 +52,9 @@ Handle<Value> create(const Arguments &args)
     //
     ObjectV8 leagueDat(Handle<Object>::Cast(args[1]));
 	
-    // league ability configuration
+    // teamInfoDat configuration
     //
-    ObjectV8 leagueAbilityDat(Handle<Object>::Cast(args[2]));
+    Handle<Object> teamInfoDat = Handle<Object>::Cast(args[2]);
 
     // language dat
     //
@@ -68,7 +66,7 @@ Handle<Value> create(const Arguments &args)
 
     // league table dat
     //
-    Handle<Array> leagueDat = Handle<Array>::Cast(args[5]);
+    Handle<Array> leagueTable = Handle<Array>::Cast(args[5]);
 
     // home roster
     //
@@ -90,68 +88,60 @@ Handle<Value> create(const Arguments &args)
     switch (option)
     {
     case 1:
-        update_rosters(leagueDat, statsDat, home_roster, away_roster, output);
-        recover_fitness(false, fitnessGain, home_roster, away_roster);
+        update_rosters(leagueDat, statsDat, homeRoster, awayRoster, output);
+        recover_fitness(homeRoster, awayRoster, false, fitnessGain);
 		generate_leaders();
         break;
     case 2:
-        update_rosters(leagueDat, statsDat, home_roster, away_roster, output);
-	    recover_fitness(true, fitnessGain, home_roster, away_roster);
+        update_rosters(leagueDat, statsDat, homeRoster, awayRoster, output);
+	    recover_fitness(homeRoster, awayRoster, true, fitnessGain);
 		generate_leaders();
         break;
     case 3:
-        decrease_suspensions_injuries(INJURIES, fitnessAfterInjury, home_roster, away_roster);
+        decrease_suspensions_injuries(homeRoster, awayRoster, fitnessAfterInjury, INJURIES);
         break;
     case 4:
-        decrease_suspensions_injuries(SUSPENSIONS, fitnessAfterInjury, home_roster, away_roster);
+        decrease_suspensions_injuries(homeRoster, awayRoster, fitnessAfterInjury, SUSPENSIONS);
         break;
     case 5:
-        update_league_table(leagueDat);
+        update_league_table(teamInfoDat, leagueTable, output);
         break;
     case 6:
-        decrease_suspensions_injuries(SUSPENSIONS, fitnessAfterInjury, home_roster, away_roster);
-        update_rosters(leagueDat, statsDat, home_roster, away_roster, output);
-		recover_fitness(true, fitnessGain, home_roster, away_roster);
+        decrease_suspensions_injuries(homeRoster, awayRoster, fitnessAfterInjury, SUSPENSIONS);
+        update_rosters(leagueDat, statsDat, homeRoster, awayRoster, output);
+		recover_fitness(homeRoster, awayRoster, true, fitnessGain);
         generate_leaders();
         break;
     case 7:
-        decrease_suspensions_injuries(SUSPENSIONS | INJURIES, fitnessAfterInjury, home_roster, away_roster);
-        update_rosters(leagueDat, statsDat, home_roster, away_roster, output);
-		recover_fitness(true, fitnessGain, home_roster, away_roster);
+        decrease_suspensions_injuries(homeRoster, awayRoster, fitnessAfterInjury, SUSPENSIONS | INJURIES);
+        update_rosters(leagueDat, statsDat, homeRoster, awayRoster, output);
+		recover_fitness(homeRoster, awayRoster, true, fitnessGain);
         generate_leaders();
-        update_league_table(leagueDat);
+        update_league_table(teamInfoDat, leagueTable, output);
         break;
     case 8:
-        decrease_suspensions_injuries(SUSPENSIONS | INJURIES, home_roster, away_roster);
-        update_rosters(leagueDat, statsDat, home_roster, away_roster, output);
-		recover_fitness(false, fitnessGain, home_roster, away_roster);
+        decrease_suspensions_injuries(homeRoster, awayRoster, fitnessAfterInjury, SUSPENSIONS | INJURIES);
+        update_rosters(leagueDat, statsDat, homeRoster, awayRoster, output);
+		recover_fitness(homeRoster, awayRoster, false, fitnessGain);
         generate_leaders();
-        update_league_table(leagueDat);
+        update_league_table(teamInfoDat, leagueTable, output);
         break;
 	case 9:
-		increase_ages(home_roster, away_roster);
+		increase_ages(homeRoster, awayRoster);
 		break;
 	case 10:
-		reset_stats(home_roster, away_roster);
+		reset_stats(homeRoster, awayRoster);
 		break;
 	case 11:
-		reset_stats(INJURIES, home_roster, away_roster);
+		reset_stats(homeRoster, awayRoster, INJURIES);
 		break;
 	case 12:
-		reset_stats(INJURIES | SUSPENSIONS, home_roster, away_roster);
+		reset_stats(homeRoster, awayRoster, INJURIES | SUSPENSIONS);
 		break;
     default:
         return scope.Close(String::New("Illegal option"));
     }
 
-    // Now all the generated reports are printed to a single summary
-    // file
-    //
-    if (!table_report.empty())
-        print_elements(output, table_report, "\n", "\n\nTable:\n------\n\n");
-
-    if (!leaders_report.empty())
-        print_elements(output, leaders_report, "\n");
 
     return scope.Close(output);
 }
@@ -243,7 +233,7 @@ void get_players_game_stats(const ObjectV8 &leagueDat, string stats_filename,
 
 // Finds a player by name in a roster
 //
-Handle<Value> get_player_by_name_from_roster(const Handle<String> &name, const& Handle<Array> &players)
+Handle<Value> get_player_by_name_from_roster(const Handle<String> &name, const Handle<Array> &players)
 {
     HandleScope scope;
     Handle<String> keyName = String::NewSymbol("name");
@@ -312,7 +302,7 @@ string make_header(string header_name)
 // Goes over stats.dir and updates the rosters of all teams with
 // stats from the listed games.
 //
-void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Array> home_roster, Handle<Array> away_roster, Handle<Object> output)
+void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Array> homeRoster, Handle<Array> awayRoster, Handle<Object> output)
 {
     // fetch some configs
     //
@@ -337,13 +327,11 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
     //
     string team_name[2];
 
-    if (home_roster->Length() != unsigned(num_players))
-        die("Expected %d players of %s in stats file %s\n",
-            num_players, team_name[0].c_str(), line.c_str());
+    if (homeRoster->Length() != unsigned(num_players))
+        die("Expected %d players of %s in stats file %s\n");
 
-    if (away_roster->Length() != unsigned(num_players))
-        die("Expected %d players of %s in stats file %s\n",
-            num_players, team_name[1].c_str(), line.c_str());
+    if (awayRoster->Length() != unsigned(num_players))
+        die("Expected %d players of %s in stats file %s\n");
 
     Handle<Array> roster;
     Handle<Object> stats;
@@ -397,8 +385,8 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
 
     for (team_n = 0; team_n <= 1; ++team_n)
     {
-        if (0 === team_n) roster = home_roster;
-        else roster = away_roster;
+        if (0 === team_n) roster = homeRoster;
+        else roster = awayRoster;
         suspensionTeam = Object::New();
         injuryTeam = Object::New();
         stIncTeam = Array::New();
@@ -603,10 +591,10 @@ void transformer_recover_fitness(Handle<Object> player, void* arg, int gain)
 }
 
 
-void recover_fitness(bool half, int fitnessGain, Handle<Array> home_roster, Handle<Array> away_roster)
+void recover_fitness(Handle<Array> homeRoster, Handle<Array> awayRoster, bool half, int fitnessGain)
 {
-	transform_all_players(transformer_recover_fitness, home_roster, &half, fitnessGain);
-	transform_all_players(transformer_recover_fitness, away_roster, &half, fitnessGain);
+	transform_all_players(transformer_recover_fitness, homeRoster, &half, fitnessGain);
+	transform_all_players(transformer_recover_fitness, awayRoster, &half, fitnessGain);
 }
 
 
@@ -619,10 +607,10 @@ void transformer_increase_ages(Handle<Object> player, void*, int)
 }
 
 
-void increase_ages(Handle<Array> home_roster, Handle<Array> away_roster)
+void increase_ages(Handle<Array> homeRoster, Handle<Array> awayRoster)
 {
-	transform_all_players(transformer_increase_ages, home_roster, 0, 0);
-	transform_all_players(transformer_increase_ages, away_roster, 0, 0);
+	transform_all_players(transformer_increase_ages, homeRoster, 0, 0);
+	transform_all_players(transformer_increase_ages, awayRoster, 0, 0);
 }
 
 
@@ -643,10 +631,10 @@ void transformer_reset_stats(Handle<Object> player, void* arg, int)
 }
 
 
-void reset_stats(unsigned inj_sus_flag, Handle<Array> home_roster, away_roster)
+void reset_stats(Handle<Array> homeRoster, Handle<Array> awayRoster, unsigned inj_sus_flag)
 {
-	transform_all_players(transformer_reset_stats, home_roster, &inj_sus_flag, 0);
-	transform_all_players(transformer_reset_stats, away_roster, &inj_sus_flag, 0);
+	transform_all_players(transformer_reset_stats, homeRoster, &inj_sus_flag, 0);
+	transform_all_players(transformer_reset_stats, awayRoster, &inj_sus_flag, 0);
 }
 
 
@@ -689,10 +677,10 @@ void transformer_decrease_sus_inj(Handle<Object> player, void* arg, int)
 }
 
 
-void decrease_suspensions_injuries(unsigned inj_sus_flag, int fitnessAfterInjury, Handle<Array> home_roster, Handle<Array> away_roster)
+void decrease_suspensions_injuries(Handle<Array> homeRoster, Handle<Array> awayRoster, int fitnessAfterInjury, unsigned inj_sus_flag)
 {
-	transform_all_players(transformer_decrease_sus_inj, home_roster, &inj_sus_flag, fitnessAfterInjury);
-	transform_all_players(transformer_decrease_sus_inj, away_roster, &inj_sus_flag, fitnessAfterInjury);
+	transform_all_players(transformer_decrease_sus_inj, homeRoster, &inj_sus_flag, fitnessAfterInjury);
+	transform_all_players(transformer_decrease_sus_inj, awayRoster, &inj_sus_flag, fitnessAfterInjury);
 }
 
 
@@ -804,25 +792,24 @@ void generate_leaders(void)
 }
 
 
-void update_league_table(void)
+void update_league_table(Handle<Array> teamInfo, Handle<Array> leagueTable, Handle<Object> output)
 {
+    HandleScope scope;
     league_table table;
+    char strTeam1[64];
+    char strTeam2[64];
+    Handle<String> keyScore = String::NewSymbol("score");
+    Handle<Object> team1 = Handle<Object>::Cast(teamInfo->Get(0));
+    Handle<Object> team2 = Handle<Object>::Cast(teamInfo->Get(1));
 
-    table.read_league_table_file("table.txt");
-    table.read_results_file("reports.txt");
+    toAscii(team1->Get(keyName)->ToString(), strTeam1);
+    toAscii(team2->Get(keyName)->ToString(), strTeam2);
 
-    string table_text = table.dump_league_table();
-    table_report.push_back(table_text);
+    table.read_league_table_file(leagueTable);
+    table.read_results_file(strTeam1, team1->Get(keyScore)->IntegerValue(), strTeam2, team1->Get(keyScore)->IntegerValue());
 
-    ofstream tf("table.txt");
-
-    if (tf)
-    {
-        tf << table_text << endl;
-        cout << "Table file table.txt updated" << endl;
-    }
-    else
-        cout << "Something went wrong updating table.txt" << endl;
+    Handle<Array> newLeagueDat = table.dump_league_table();
+    output->Set(String::New("leagueTable"), newLeagueDat);
 }
 
 
