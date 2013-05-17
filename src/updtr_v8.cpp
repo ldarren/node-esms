@@ -14,7 +14,6 @@
 #include "util.h"
 #include "object_v8.h"
 #include "league_table_v8.h"
-#include "comment_v8.h"
 #include "updtr_v8.h"
 
 using namespace v8;
@@ -54,29 +53,23 @@ Handle<Value> create(const Arguments &args)
 	
     // teamInfoDat configuration
     //
-    Handle<Object> teamInfoDat = Handle<Object>::Cast(args[2]);
-
-    // language dat
-    //
-    Handle<Object> languageDat = Handle<Object>::Cast(args[3]);
+    Handle<Array> teamInfoDat = Handle<Array>::Cast(args[2]);
 
     // statistic dat
     //
-    Handle<Array> statsDat = Handle<Array>::Cast(args[4]);
+    Handle<Array> statsDat = Handle<Array>::Cast(args[3]);
 
     // league table dat
     //
-    Handle<Array> leagueTable = Handle<Array>::Cast(args[5]);
+    Handle<Array> leagueTable = Handle<Array>::Cast(args[4]);
 
     // home roster
     //
-    Handle<Object> homeRoster = Handle<Object>::Cast(args[6]);
+    Handle<Array> homeRoster = Handle<Array>::Cast(args[5]);
 
     // away roster
     //
-    Handle<Object> awayRoster = Handle<Object>::Cast(args[7]);
-
-    the_commentary().init_commentary(languageDat);
+    Handle<Array> awayRoster = Handle<Array>::Cast(args[6]);
 
 	int fitnessAfterInjury = leagueDat.get("updtr_fitness_after_injury", 80);
 	int fitnessGain = leagueDat.get("updtr_fitness_gain", 20);
@@ -142,6 +135,8 @@ Handle<Value> create(const Arguments &args)
         return scope.Close(String::New("Illegal option"));
     }
 
+    output->Set(String::New("homeRoster"), homeRoster);
+    output->Set(String::New("awayRoster"), awayRoster);
 
     return scope.Close(output);
 }
@@ -240,7 +235,7 @@ Handle<Value> get_player_by_name_from_roster(const Handle<String> &name, const H
     Handle<Object> player;
     for (int i=0, l=players->Length(); i<l; ++i)
     {
-        player = players->Get(i);
+        player = Handle<Object>::Cast(players->Get(i));
 		if (player->Get(keyName)->ToString()->StrictEquals(name))
 			return scope.Close(player);
     }
@@ -325,12 +320,10 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
     // For each line in the stats.dir file (that is, for each game stats to
     // update), open the relevant rosters and update the relevant players.
     //
-    string team_name[2];
-
-    if (homeRoster->Length() != unsigned(num_players))
+    if (homeRoster->Length() < unsigned(num_players))
         die("Expected %d players of %s in stats file %s\n");
 
-    if (awayRoster->Length() != unsigned(num_players))
+    if (awayRoster->Length() < unsigned(num_players))
         die("Expected %d players of %s in stats file %s\n");
 
     Handle<Array> roster;
@@ -361,7 +354,6 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
     Handle<Array> shIncTeam;
     Handle<Array> shDecTeam;
     Handle<String> keyGames = String::NewSymbol("games");
-    Handle<String> keySaves = String::NewSymbol("saves");
     Handle<String> keyTackles = String::NewSymbol("tackles");
     Handle<String> keyKeyPasses = String::NewSymbol("keypasses");
     Handle<String> keyShots = String::NewSymbol("shots");
@@ -381,11 +373,11 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
     Handle<String> keyDp = String::NewSymbol("dp");
     int team_n, player_n;
     int stAb, tkAb, psAb, shAb;
-    int dp, dp_before_update, dp_after_update, perf_points, suspension, injury;
+    int dp, dp_before_update, dp_after_update, suspension, injury;
 
     for (team_n = 0; team_n <= 1; ++team_n)
     {
-        if (0 === team_n) roster = homeRoster;
+        if (0 == team_n) roster = homeRoster;
         else roster = awayRoster;
         suspensionTeam = Object::New();
         injuryTeam = Object::New();
@@ -398,7 +390,7 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
         shIncTeam = Array::New();
         shDecTeam = Array::New();
 
-        stats = statsDat->Get(team_n);
+        stats = Handle<Object>::Cast(statsDat->Get(team_n));
         statsKey = stats->GetOwnPropertyNames();
 
         // For each player in the stats: look it up in the roster, and
@@ -406,8 +398,8 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
         //
         for (player_n = 0; player_n < num_players; ++player_n)
         {
-            name = statsKey->Get(player_n);
-            playerStat = stats->Get(name);
+            name = statsKey->Get(player_n)->ToString();
+            playerStat = Handle<Array>::Cast(stats->Get(name));
             playerEle = get_player_by_name_from_roster(name, roster);
 
             if (playerEle->IsUndefined())
@@ -419,9 +411,9 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
             //
             player->Set(keyGames, Integer::New(player->Get(keyGames)->IntegerValue() + (playerStat->Get(7)->IntegerValue() > 0 ? 1 : 0)));
             player->Set(keyGames, Integer::New(player->Get(keyGames)->IntegerValue() + playerStat->Get(8)->IntegerValue()));
-            player->Set(keyTackles, Integer::New(player->Get(keytackles)->IntegerValue() + playerStat->Get(9)->IntegerValue()));
-            player->Set(keyKeyPasses, Integer::New(player->Get(keytackles)->IntegerValue() + playerStat->Get(10)->IntegerValue()));
-            player->Set(keyAssists, Integer::New(player->Get(keyAssits)->IntegerValue() + playerStat->Get(11)->IntegerValue()));
+            player->Set(keyTackles, Integer::New(player->Get(keyTackles)->IntegerValue() + playerStat->Get(9)->IntegerValue()));
+            player->Set(keyKeyPasses, Integer::New(player->Get(keyKeyPasses)->IntegerValue() + playerStat->Get(10)->IntegerValue()));
+            player->Set(keyAssists, Integer::New(player->Get(keyAssists)->IntegerValue() + playerStat->Get(11)->IntegerValue()));
             player->Set(keyShots, Integer::New(player->Get(keyShots)->IntegerValue() + playerStat->Get(12)->IntegerValue()));
             player->Set(keyGoals, Integer::New(player->Get(keyGoals)->IntegerValue() + playerStat->Get(13)->IntegerValue()));
 
@@ -567,12 +559,12 @@ void update_rosters(const ObjectV8 &leagueDat, Handle<Array> statsDat, Handle<Ar
 // Goes over all players in all teams listed in teams.dir and "transforms" them using
 // the provided transformer_proc
 //
-void transform_all_players(void (*transformer_proc)(Handle<Object>, string, void*), Handle<Array> roster, void* arg, int opt)
+void transform_all_players(void (*transformer_proc)(Handle<Object>, void*, int), Handle<Array> roster, void* arg, int opt)
 {
     HandleScope scope;
     for (int i=0, l=roster->Length(); i<l; ++i)
     {
-        transformer_proc(roster->Get(i), arg, opt);
+        transformer_proc(Handle<Object>::Cast(roster->Get(i)), arg, opt);
     }
 }
 
@@ -587,7 +579,7 @@ void transformer_recover_fitness(Handle<Object> player, void* arg, int gain)
 	int fitness = player->Get(keyFitness)->IntegerValue() + gain;
 	
 	if (fitness > 100) fitness = 100;
-    player->Set(keyFitness, IntegerValue(fitness));
+    player->Set(keyFitness, Integer::New(fitness));
 }
 
 
@@ -603,7 +595,7 @@ void transformer_increase_ages(Handle<Object> player, void*, int)
     HandleScope scope;
 	Handle<String> keyAge = String::NewSymbol("age");
 
-	player->Set(keyAge, integerValue(player->Get(keyAge)->IntegerValue() + 1));
+	player->Set(keyAge, Integer::New(player->Get(keyAge)->IntegerValue() + 1));
 }
 
 
@@ -730,6 +722,7 @@ bool leaders_predicate_perf(const player_stat& p1, const player_stat& p2)
 
 void generate_leaders(void)
 {
+    /*
     ifstream dir_file("teams.dir");
 
     if (!dir_file)
@@ -789,6 +782,7 @@ void generate_leaders(void)
     make_leaders_report(stat_players, "Disciplinary points", "DPs");
 
     cout << "Leaders generated\n";
+    */
 }
 
 
@@ -798,6 +792,7 @@ void update_league_table(Handle<Array> teamInfo, Handle<Array> leagueTable, Hand
     league_table table;
     char strTeam1[64];
     char strTeam2[64];
+    Handle<String> keyName = String::NewSymbol("name");
     Handle<String> keyScore = String::NewSymbol("score");
     Handle<Object> team1 = Handle<Object>::Cast(teamInfo->Get(0));
     Handle<Object> team2 = Handle<Object>::Cast(teamInfo->Get(1));

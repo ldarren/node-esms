@@ -66,7 +66,7 @@ struct player_stat
 };
 
 
-void transform_all_players(void (*transformer_proc)(v8::Handle<v8::Object>, string, void*), v8::Handle<v8::Array>, void*, int);
+void transform_all_players(void (*transformer_proc)(v8::Handle<v8::Object>, void*, int), v8::Handle<v8::Array>, void*, int);
 void increase_ages(v8::Handle<v8::Array>, v8::Handle<v8::Array>);
 void reset_stats(v8::Handle<v8::Array>, v8::Handle<v8::Array>, unsigned inj_sus_flag = 0);
 void recover_fitness(v8::Handle<v8::Array>, v8::Handle<v8::Array>, bool, int);

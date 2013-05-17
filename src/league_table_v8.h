@@ -39,7 +39,7 @@ public:
 
     // Reads a league table file and fills in the teams data
     //
-    void read_league_table(v8::Handle<v8::Array> leagueDat);
+    void read_league_table_file(v8::Handle<v8::Array> leagueDat);
 
     // Reads a results file and adds the new results to teams data
     //

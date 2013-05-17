@@ -6,7 +6,9 @@
 #include <node.h>
 
 #include "league_table_v8.h"
+#include "object_v8.h"
 
+using namespace v8;
 
 bool team_data_predicate(league_table::team_data data1, league_table::team_data data2)
 {
@@ -33,7 +35,7 @@ void league_table::read_league_table_file(Handle<Array> leagueDat)
     // The file doesn't have to exist (if it doesn't, a new table is
     // created). But if it exists, it must be in correct format
     //
-    if (leagueDate->Length())
+    if (leagueDat->Length())
     {
         HandleScope scope;
         Handle<Array> tokens;
@@ -156,15 +158,15 @@ Handle<Array> league_table::dump_league_table(void)
     {
         line = Array::New();
         line->Set(0, Integer::New((i - sorted_teams.begin()) + 1));
-        line->Set(1, String::New(i->name.c_str());
-        line->Set(2, Integer::New(i->played);
-        line->Set(3, Integer::New(i->won);
-        line->Set(4, Integer::New(i->drawn);
-        line->Set(5, Integer::New(i->lost);
-        line->Set(6, Integer::New(i->goals_for);
-        line->Set(7, Integer::New(i->goals_against);
-        line->Set(8, Integer::New(i->goal_difference);
-        line->Set(9, Integer::New(i->points);
+        line->Set(1, String::New(i->name.c_str()));
+        line->Set(2, Integer::New(i->played));
+        line->Set(3, Integer::New(i->won));
+        line->Set(4, Integer::New(i->drawn));
+        line->Set(5, Integer::New(i->lost));
+        line->Set(6, Integer::New(i->goals_for));
+        line->Set(7, Integer::New(i->goals_against));
+        line->Set(8, Integer::New(i->goal_difference));
+        line->Set(9, Integer::New(i->points));
 
         leagueTable->Set(leagueTable->Length(), line);
     }

@@ -32,9 +32,7 @@
             "sources": [ 
                 "updtr_v8.cpp", 
                 "league_table_v8.cpp",
-                "comment_v8.cpp", 
                 "object_v8.cpp", 
-                "league_table_v8.cpp", 
                 "util.cpp" ]
         }
     ]

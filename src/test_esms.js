@@ -19,7 +19,7 @@ sheet = tsc('Apes United', "442N", testRoster, leagueDat);
 
 console.log(sheet);
 */
-
+/*
 var
 esms = require('./build/Release/esms'),
 option = {
@@ -32,7 +32,7 @@ option = {
 report = esms(option, leagueDat, leagueAbilities, languageDat, tacticsDat, teamsheet, teamsheet, testRoster, testRoster);
 
 console.log('%j',report);
-/*
+*/
 var
 updtr = require('./build/Release/updtr'),
 //    "Weekly updates:\n\n"
@@ -51,9 +51,8 @@ updtr = require('./build/Release/updtr'),
 //    "12) Reset all player stats, including injuries and suspensions\n\n"
 //    "Enter your choice -> ";
 option = {
-    choice: 8
+    choice: 5
 },
-result = updtr(option, leagueDat, languageDat, statsDat, testRoster, testRoster);
+result = updtr(option, leagueDat, statsDat.teamInfo, statsDat.teamStatistics, {}, testRoster, testRoster);
 
 console.log(result);
-*/
