@@ -1,0 +1,27 @@
+{
+    "name": "node-esms",
+    "version": "0.0.1",
+    "main":"./build/Release/esms",
+    "description": "A C++ esms module",
+    "keywords": [
+        "esms"
+    ],
+    "author": {
+        "name": "Darren Liew",
+        "email": "ldarren@gmail.com"
+    }, 
+    "license": {
+        "type": "MIT"
+    }, 
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ldarren/node-esms.git" 
+    }, 
+    "directories": {
+        "examples": "tests",
+        "src": "src"
+    },
+    "engines": {
+        "node": ">=0.6.0"
+    }
+}
