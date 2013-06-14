@@ -801,7 +801,7 @@ void update_league_table(Handle<Array> teamInfo, Handle<Array> leagueTable, Hand
     toAscii(team2->Get(keyName)->ToString(), strTeam2);
 
     table.read_league_table_file(leagueTable);
-    table.read_results_file(strTeam1, team1->Get(keyScore)->IntegerValue(), strTeam2, team1->Get(keyScore)->IntegerValue());
+    table.read_results_file(strTeam1, team1->Get(keyScore)->IntegerValue(), strTeam2, team2->Get(keyScore)->IntegerValue());
 
     Handle<Array> newLeagueDat = table.dump_league_table();
     output->Set(String::New("leagueTable"), newLeagueDat);
