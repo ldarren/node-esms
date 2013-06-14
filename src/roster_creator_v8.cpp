@@ -72,10 +72,6 @@ Handle<Value> create(const Arguments& args)
 
     ObjectV8 cfg(Handle<Object>::Cast(args[0]));
 
-    srand((unsigned) time(NULL));
-
-    fill_gaussian_vars_arr(gaussian_vars, N_GAUSS);
-
     // Setting up some default values for the
     // configuration data variables
     //
@@ -90,11 +86,16 @@ Handle<Value> create(const Arguments& args)
     int cfg_average_main_skill = cfg.get("AVERAGE_MAIN_SKILL", 14);
     int cfg_average_mid_skill = cfg.get("AVERAGE_MID_SKILL", 11);
     int cfg_average_secondary_skill = cfg.get("AVERAGE_SECONDARY_SKILL", 7);
+    unsigned cfg_rand_seed = cfg.get("RANDOM_SEED", (unsigned)time(NULL));
 
     int n_players = cfg_n_gk + cfg_n_df + cfg_n_dm + cfg_n_mf + cfg_n_am + cfg_n_fw;
 
     Handle<Array> playersArr = Array::New(n_players);
     ObjectV8 *player;
+
+    srand(cfg_rand_seed);
+
+    fill_gaussian_vars_arr(gaussian_vars, N_GAUSS);
 
     for (int pl_count = 1; pl_count <= n_players; ++pl_count)
     {

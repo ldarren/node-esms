@@ -1,6 +1,6 @@
 {
     "name": "node-esms",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "main":"./build/Release/esms",
     "description": "A C++ esms module",
     "keywords": [
