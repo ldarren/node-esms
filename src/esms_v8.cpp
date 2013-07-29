@@ -1714,7 +1714,7 @@ Handle<Value> create(const Arguments &args)
     // handling/parsing command line arguments
     //
     ObjectV8 opt(Handle<Object>::Cast(args[0]));
-printf("1\n");
+
     unsigned timed_random_seed = opt.get("set_rnd_seed", 0);
     if (timed_random_seed)
     {
@@ -1750,7 +1750,6 @@ printf("1\n");
     Handle<Array> home_roster = Handle<Array>::Cast(args[7]); // team[0].roster_players
     Handle<Array> away_roster = Handle<Array>::Cast(args[8]); // team[1].roster_players
 
-printf("2\n");
     tact_manager().init(tacticDat);
 
     team_stats_total_enabled = leagueDat.get("team_stats_total", 0) == 1 ? true : false;
@@ -1763,23 +1762,18 @@ printf("2\n");
     if (num_subs < 1 || num_subs > 13) return scope.Close(String::New("The number of subs specified in leagueDat must be between 1 and 13"));
 
     num_players = 11 + num_subs;
-printf("3\n");
 
     the_commentary().init_commentary(languageDat);
 
-printf("4\n");
     init_teams_data(home_teamsheet, away_teamsheet, home_roster, away_roster);
 
-printf("5\n");
     home_bonus = leagueDat.get("home_bonus", 0);
 
     /* Creating commentary output */
     Handle<Object> output = Object::New();
     Handle<Array> commentary = Array::New();
-printf("6\n");
 
     print_starting_tactics(output);
-printf("7\n");
 
     commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_KICKOFF").c_str()));
 
@@ -1799,12 +1793,12 @@ printf("7\n");
     //
 
     const int half_length = 45;
-printf("8\n");
 
     // For each half
     //
     for (int half_start = 1; half_start < 2*half_length; half_start += half_length)
     {
+printf("half_start %d\n",half_start);
         int half = half_start == 1 ? 1 : 2;
         int last_minute_of_half = half_start + half_length - 1;
         bool in_inj_time = false;
@@ -1816,6 +1810,7 @@ printf("8\n");
         //
         for (minute = formal_minute = half_start; minute <= last_minute_of_half; ++minute)
         {
+printf("m[%d]",minute);
             clean_inj_card_indicators();
             recalculate_teams_data();
 
@@ -1823,6 +1818,7 @@ printf("8\n");
             //
             for (int j = 0; j <= 1; j++)
             {
+printf("evt[%d]",j);
                 // Calculate different events
                 //
                 if_shot(commentary, j);
@@ -1832,11 +1828,12 @@ printf("8\n");
                 score_diff = team[j].score - team[!j].score;
                 check_conditionals(j);
             }
-
+printf("!");
             // fixme ?
             if (team_stats_total_enabled)
                 if (minute == 1 || minute%10 == 0)
                     add_team_stats_total();
+printf("@");
 
             if (!in_inj_time)
             {
@@ -1844,6 +1841,7 @@ printf("8\n");
 
                 update_players_minute_count();
             }
+printf("#");
 
             if (minute == last_minute_of_half && !in_inj_time)
             {
@@ -1859,6 +1857,7 @@ printf("8\n");
                 sprintf(buf, "%d", inj_time_length);
                 commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_INJURYTIME", buf).c_str()));
             }
+printf("$");
         }
 
         in_inj_time = false;
@@ -1868,10 +1867,8 @@ printf("8\n");
         else if (half == 2)
             commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_FULLTIME").c_str()));
     }
-printf("9\n");
 
     calc_ability(leagueAbilityDat);
-printf("10\n");
 
     // There are several options to specify how the user wants
     // to run penalty shootouts. Sorted by precendence:
@@ -1912,15 +1909,12 @@ printf("10\n");
         else if (cup_flag == 2)
             RunPenaltyShootout();
     }
-printf("11\n");
 
     print_final_stats(output);
-printf("12\n");
     //create_stats_file(output);
     //update_reports_file(output);
 
     output->Set(String::New("commentary"), commentary);
-printf("13\n");
 
     // not reachable
     return scope.Close(output);
