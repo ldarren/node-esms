@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "game.h"
-#include "report_event.h"
+//#include "report_event.h"
 #include "cond.h"
 #include "util.h"
 #include "mt.h"
@@ -40,7 +40,7 @@ int num_players;
 
 struct teams team[2];
 
-vector<report_event*> report_vec;
+//vector<report_event*> report_vec;
 
 // This array is used to store the teams' total stats on
 // various minutes during the game
@@ -100,15 +100,12 @@ string formal_minute_str()
 ///
 /// Takes into account substitutions, injuries and fouls (by both teams)
 ///
-int how_much_inj_time(void)
+int how_much_inj_time(double &substitutions, double &injuries, double &fouls)
 {
     // Each time this function is called, it subtracts the last
     // totals it had, because the stats accumulate and don't
     // annulize between halves
     //
-    static double substitutions = 0;
-    static double injuries = 0;
-    static double fouls = 0;
 
     substitutions = team[0].substitutions + team[1].substitutions - substitutions;
     injuries = team[0].injuries + team[1].injuries - injuries;
@@ -574,10 +571,10 @@ void random_injury(Handle<Array> commentary, int max_substitutions, int a)
         commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("INJURY", minute_str().c_str(), team[a].name,
                     team[a].player[injured].name).c_str()));
 
-        report_event* an_event = new report_event_injury(team[a].player[injured].name,
+/*        report_event* an_event = new report_event_injury(team[a].player[injured].name,
                                  team[a].name, formal_minute_str().c_str());
         report_vec.push_back(an_event);
-
+*/
         injured_ind[a] = injured;
 
         /* Only 3 substitutions are allowed per team per game */
@@ -946,10 +943,10 @@ void if_shot(Handle<Array> commentary, int a)
                                 team[1].name);
                         commentary->Set(commentary->Length(), String::New(buf));
 
-                        report_event* an_event = new report_event_goal(team[a].player[shooter].name,
+/*                        report_event* an_event = new report_event_goal(team[a].player[shooter].name,
                                                  team[a].name, formal_minute_str().c_str());
 
-                        report_vec.push_back(an_event);
+                        report_vec.push_back(an_event);*/
                     }
                 }
                 else
@@ -1179,9 +1176,9 @@ void bookings(Handle<Array> commentary, int max_substitutions, int a, int b, int
             commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("SECONDYELLOWCARD").c_str()));
             send_off(commentary, max_substitutions, a, b);
 
-            report_event* an_event = new report_event_red_card(team[a].player[b].name,
+/*            report_event* an_event = new report_event_red_card(team[a].player[b].name,
                                      team[a].name, formal_minute_str().c_str());
-            report_vec.push_back(an_event);
+            report_vec.push_back(an_event);*/
 
             red_carded[a] = b;
         }
@@ -1193,9 +1190,9 @@ void bookings(Handle<Array> commentary, int max_substitutions, int a, int b, int
         commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("REDCARD").c_str()));
         send_off(commentary, max_substitutions, a, b);
 
-        report_event* an_event = new report_event_red_card(team[a].player[b].name,
+/*        report_event* an_event = new report_event_red_card(team[a].player[b].name,
                                  team[a].name, formal_minute_str().c_str());
-        report_vec.push_back(an_event);
+        report_vec.push_back(an_event);*/
 
         red_carded[a] = b;
     }
@@ -1262,9 +1259,9 @@ void if_foul(Handle<Array> commentary, int max_substitutions, int a)
                         team[1].score,  team[1].name);
                 commentary->Set(commentary->Length(), String::New(buf));
 
-                report_event* an_event = new report_event_penalty(team[!a].player[team[!a].penalty_taker].name,
+/*                report_event* an_event = new report_event_penalty(team[!a].player[team[!a].penalty_taker].name,
                                          team[!a].name, formal_minute_str().c_str());
-                report_vec.push_back(an_event);
+                report_vec.push_back(an_event);*/
 
             }
             else /* If the penalty taker didn't score */
@@ -1793,6 +1790,9 @@ Handle<Value> create(const Arguments &args)
     //
 
     const int half_length = 45;
+    double substitutions = 0;
+    double injuries = 0;
+    double fouls = 0;
 
     // For each half
     //
@@ -1801,7 +1801,7 @@ Handle<Value> create(const Arguments &args)
         int half = half_start == 1 ? 1 : 2;
         int last_minute_of_half = half_start + half_length - 1;
         bool in_inj_time = false;
-printf("half[%d]\n",half);
+
         // Play the game minutes of this half
         //
         // last_minute_of_half will be increased by inj_time_length in
@@ -1809,7 +1809,6 @@ printf("half[%d]\n",half);
         //
         for (minute = formal_minute = half_start; minute <= last_minute_of_half; ++minute)
         {
-printf("[m%d]",minute);
             clean_inj_card_indicators();
             recalculate_teams_data();
 
@@ -1847,14 +1846,14 @@ printf("[m%d]",minute);
                 // this now
                 --formal_minute;
 
-                int inj_time_length = how_much_inj_time();
+                int inj_time_length = how_much_inj_time(substitutions, injuries, fouls);
                 last_minute_of_half += inj_time_length;
-printf("add[%d]",inj_time_length);
+
                 sprintf(buf, "%d", inj_time_length);
                 commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_INJURYTIME", buf).c_str()));
             }
         }
-printf("done\n");
+
         in_inj_time = false;
 
         if (half == 1)
