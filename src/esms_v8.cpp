@@ -1798,11 +1798,10 @@ Handle<Value> create(const Arguments &args)
     //
     for (int half_start = 1; half_start < 2*half_length; half_start += half_length)
     {
-printf("half_start %d\n",half_start);
         int half = half_start == 1 ? 1 : 2;
         int last_minute_of_half = half_start + half_length - 1;
         bool in_inj_time = false;
-
+printf("half[%d]\n",half);
         // Play the game minutes of this half
         //
         // last_minute_of_half will be increased by inj_time_length in
@@ -1810,7 +1809,7 @@ printf("half_start %d\n",half_start);
         //
         for (minute = formal_minute = half_start; minute <= last_minute_of_half; ++minute)
         {
-printf("m[%d]",minute);
+printf("[m%d]",minute);
             clean_inj_card_indicators();
             recalculate_teams_data();
 
@@ -1818,7 +1817,6 @@ printf("m[%d]",minute);
             //
             for (int j = 0; j <= 1; j++)
             {
-printf("evt[%d]",j);
                 // Calculate different events
                 //
                 if_shot(commentary, j);
@@ -1828,12 +1826,11 @@ printf("evt[%d]",j);
                 score_diff = team[j].score - team[!j].score;
                 check_conditionals(j);
             }
-printf("!");
+
             // fixme ?
             if (team_stats_total_enabled)
                 if (minute == 1 || minute%10 == 0)
                     add_team_stats_total();
-printf("@");
 
             if (!in_inj_time)
             {
@@ -1841,7 +1838,6 @@ printf("@");
 
                 update_players_minute_count();
             }
-printf("#");
 
             if (minute == last_minute_of_half && !in_inj_time)
             {
@@ -1853,13 +1849,12 @@ printf("#");
 
                 int inj_time_length = how_much_inj_time();
                 last_minute_of_half += inj_time_length;
-
+printf("add[%d]",inj_time_length);
                 sprintf(buf, "%d", inj_time_length);
                 commentary->Set(commentary->Length(), String::New(the_commentary().rand_comment("COMM_INJURYTIME", buf).c_str()));
             }
-printf("$");
         }
-
+printf("done\n");
         in_inj_time = false;
 
         if (half == 1)
