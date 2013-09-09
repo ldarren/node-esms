@@ -1,5 +1,5 @@
 require('./test_dat.js');
-*
+/*
 var
 roster_creator = require('../build/Release/roster_creator'),
 roster = roster_creator({N_GK:1,N_DF:2,N_DM:3,N_MF:4,N_AM:5,N_FW:6,RANDOM_SEED:1234});
@@ -33,7 +33,7 @@ report = esms(option, leagueDat, leagueAbilities, languageDat, tacticsDat, teams
 
 console.log('%j',report);
 */
-/*
+
 var
 updtr = require('../build/Release/updtr'),
 //    "Weekly updates:\n\n"
@@ -57,4 +57,4 @@ option = {
 result = updtr(option, leagueDat, statsDat.teamInfo, statsDat.teamStatistics, {}, testRoster, testRoster);
 
 console.log(result);
-*/
+

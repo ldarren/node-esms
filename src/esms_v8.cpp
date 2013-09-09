@@ -10,7 +10,7 @@
 #include <sstream>
 #include <vector>
 
-#include "game.h"
+#include "game_v8.h"
 //#include "report_event.h"
 #include "cond.h"
 #include "util.h"
@@ -1884,12 +1884,12 @@ Handle<Value> create(const Arguments &args)
         int cur_score = team[0].score * 100 + team[1].score;
 
         if (penalty_score == cur_score)
-            RunPenaltyShootout();
+            RunPenaltyShootout(commentary);
     }
     else if (wanted_diff)
     {
         if (wanted_diff == team[0].score - team[1].score)
-            RunPenaltyShootout();
+            RunPenaltyShootout(commentary);
     }
     else
     {
@@ -1898,10 +1898,10 @@ Handle<Value> create(const Arguments &args)
         if (cup_flag == 1)
         {
             if (opt.get("penalty_shootout", true))
-                RunPenaltyShootout();
+                RunPenaltyShootout(commentary);
         }
         else if (cup_flag == 2)
-            RunPenaltyShootout();
+            RunPenaltyShootout(commentary);
     }
 
     print_final_stats(output);

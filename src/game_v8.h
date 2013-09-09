@@ -8,6 +8,7 @@
 
 
 /* Header files used by the main program */
+#include <v8.h>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -177,9 +178,9 @@ int who_did_it(int team, DID_WHAT event);
 /* Functions implemented in penalty.cpp
 */
 int GoalDiff(void);
-void RunPenaltyShootout(void);
+void RunPenaltyShootout(v8::Handle<v8::Array>);
 void AssignPenaltyTakers(void);
-void TakePenalty(int, int);
+void TakePenalty(v8::Handle<v8::Array>, int, int);
 
 
 #endif /* GAME_H */

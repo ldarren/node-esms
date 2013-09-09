@@ -23,6 +23,7 @@
                 "src/mt.cpp", 
                 "src/cond_utils.cpp", 
                 "src/comment_v8.cpp", 
+                "src/penalty_v8.cpp", 
                 "src/tactics_v8.cpp", 
                 "src/object_v8.cpp", 
                 "src/util.cpp" ]
