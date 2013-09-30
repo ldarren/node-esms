@@ -25,12 +25,13 @@ Objectives of this port is to allow esms work nicely with node.js based servers
 
 ##Compiling
 To compile node-esms, First install node.js
-1. sudo apt-get install -y build-essential libssh-dev git-core curl
-2. wget http://nodejs.org/dist/latest/node-v0.10.19.tar.gz
-3. tar -zxf node-v0.10.19.tar.gz
-4. cd node-v0.10.19
-5. ./configure
-6. sudo make install
+1. Setup environment: sudo apt-get install -y build-essential libssh-dev git-core curl
+2. Download latest node.js source code: wget http://nodejs.org/dist/latest/node-v0.10.19.tar.gz
+3. Decompress node.js: tar -zxf node-v0.10.19.tar.gz
+4. Goto source folder: cd node-v0.10.19
+5. Create makefile: ./configure
+6. Compile: sudo make
+7. Install: sudo make install
 
 Compiling node-esms from source code with [node-gyp](http://nodejs.org/api/addons.html#addons_hello_world)
 1. cd node-esms/
