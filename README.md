@@ -34,14 +34,14 @@ To compile node-esms, First install node.js
  7. Install: sudo make install
 
 Compiling node-esms from source code with [node-gyp](http://nodejs.org/api/addons.html#addons_hello_world)
-1. cd node-esms/
-2. node-gyp configure
-3. node-gyp build
-4. binary of esms can be found at ./src/build/Release/
-5. To test it node tests/test_esms.js
+ 1. cd node-esms/
+ 2. node-gyp configure
+ 3. node-gyp build
+ 4. binary of esms can be found at ./src/build/Release/
+ 5. To test it node tests/test_esms.js
 
 To use binary form, get it from [npm](https://npmjs.org/package/node-esms)
-1. npm install node-esms
+ 1. npm install node-esms
 
 ##References
 * https://developers.google.com/v8/embed?csw=1
